@@ -225,7 +225,7 @@ final class DraughtsTests: XCTestCase {
     }
 
     func testNoPiecesLoses() {
-        let g = Draughts(squares: Self.board([
+        var g = Draughts(squares: Self.board([
             (5, 0, Draughts.Piece.whiteMan),
         ]), currentPlayer: 1)
         XCTAssertTrue(g.isOver)
@@ -283,7 +283,7 @@ final class DraughtsTests: XCTestCase {
 
     func testCopyIsIndependent() {
         var g = Draughts()
-        let c = g.copy()
+        var c = g.copy()
         try? c.play(Self.mv([30, 41]))
         XCTAssertEqual(c.ply, 1)
         XCTAssertEqual(g.ply, 0)

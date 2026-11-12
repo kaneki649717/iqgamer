@@ -354,7 +354,7 @@ public struct Shogi: BoardGame {
         forcePlay(move)
     }
 
-    private mutating func forcePlay(_ move: ShogiMove) {
+    mutating func forcePlay(_ move: ShogiMove) {
         let me = currentPlayer
         var key = zobristKey
         key ^= Self.zTurn
