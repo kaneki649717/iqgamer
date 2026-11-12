@@ -148,7 +148,7 @@ public struct Chess: BoardGame {
                     let t = Chess.typeOf(p)
                     if Chess.colorOf(p) == player {
                         let diagonal = i >= 4
-                        if t == 5 || t == 6 || (diagonal ? t == 3 : t == 4) { return true }
+                        if t == 5 || (diagonal ? t == 3 : t == 4) { return true }
                     }
                     break
                 }
@@ -184,7 +184,7 @@ public struct Chess: BoardGame {
         return legal
     }
 
-    private func appendPseudoMoves(to moves: inout [ChessMove]) {
+    func appendPseudoMoves(to moves: inout [ChessMove]) {
         let me = currentPlayer
         for sq in 0..<64 {
             let p = board[sq]
@@ -305,7 +305,7 @@ public struct Chess: BoardGame {
     }
 
     /// 内部快速走子（已保证伪合法）
-    private mutating func forcePlay(_ move: ChessMove) {
+    mutating func forcePlay(_ move: ChessMove) {
         let from = Int(move.from), to = Int(move.to)
         let moving = board[from]
         let myType = Chess.typeOf(moving)

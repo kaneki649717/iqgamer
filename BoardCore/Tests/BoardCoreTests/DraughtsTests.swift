@@ -180,10 +180,12 @@ final class DraughtsTests: XCTestCase {
 
     func testPromotionDuringCaptureContinuesAsKing() {
         // 白兵 (7,4) 跳 (8,5) 落 (9,6) 底线：停下升王，并以王继续吃 (8,7) 落 (7,8)
+        // (6,9) 摆黑兵挡住飞王跳吃 (8,7) 后的第二个落点，保证最大链唯一
         var g = Draughts(squares: Self.board([
             (7, 4, Draughts.Piece.whiteMan),
             (8, 5, Draughts.Piece.blackMan),
             (8, 7, Draughts.Piece.blackMan),
+            (6, 9, Draughts.Piece.blackMan),
         ]))
         let moves = g.legalMoves()
         XCTAssertEqual(moves.count, 1)
@@ -193,9 +195,13 @@ final class DraughtsTests: XCTestCase {
         XCTAssertEqual(g.squares[96], Draughts.Piece.empty)
         XCTAssertEqual(g.squares[85], Draughts.Piece.empty)
         XCTAssertEqual(g.squares[87], Draughts.Piece.empty)
+        XCTAssertEqual(g.squares[69], Draughts.Piece.blackMan, "未被跳的子保持原位")
         XCTAssertEqual(g.squares[74], Draughts.Piece.empty)
         // 与直接摆出终局局面的 key 一致（含换手键）
-        let fresh = Draughts(squares: Self.board([(7, 8, Draughts.Piece.whiteKing)]), currentPlayer: 1)
+        let fresh = Draughts(squares: Self.board([
+            (7, 8, Draughts.Piece.whiteKing),
+            (6, 9, Draughts.Piece.blackMan),
+        ]), currentPlayer: 1)
         XCTAssertEqual(g.zobristKey, fresh.zobristKey)
     }
 

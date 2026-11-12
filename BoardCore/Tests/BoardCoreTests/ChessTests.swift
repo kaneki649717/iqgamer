@@ -32,12 +32,12 @@ final class ChessTests: XCTestCase {
         var g = Chess()
         // 1.e4 e5 2.Nf3 Nc6 3.Bc4 Bc5 4.O-O
         let seq: [Chess.ChessMove] = [
-            .init(from: 52, to: 44), // e2-e4
+            .init(from: 52, to: 36), // e2-e4
             .init(from: 12, to: 20), // e7-e5
             .init(from: 62, to: 45), // Ng1-f3
-            .init(from: 11, to: 18), // Nb8-c6
-            .init(from: 61, to: 44), // Bf1-c4
-            .init(from: 10, to: 19), // Bf8-c5
+            .init(from: 1,  to: 18), // Nb8-c6
+            .init(from: 61, to: 34), // Bf1-c4
+            .init(from: 5,  to: 26), // Bf8-c5
         ]
         for m in seq { try? g.play(m) }
         XCTAssertTrue(g.legalMoves().contains(.init(from: 60, to: 62)), "白应可王侧易位")
@@ -65,14 +65,14 @@ final class ChessTests: XCTestCase {
 
     func testEnPassant() {
         var g = Chess()
-        try? g.play(.init(from: 52, to: 44)) // e4
-        try? g.play(.init(from: 48, to: 40)) // a6
-        try? g.play(.init(from: 44, to: 36)) // e5
-        try? g.play(.init(from: 19, to: 35)) // d5（双步）
-        XCTAssertTrue(g.legalMoves().contains(.init(from: 36, to: 27)), "白兵应可吃过路兵 d6")
-        try? g.play(.init(from: 36, to: 27)) // exd6
-        XCTAssertEqual(g.board[35], 0, "被吃过路兵应消失")
-        XCTAssertEqual(g.board[27], 1)
+        try? g.play(.init(from: 52, to: 36)) // e4
+        try? g.play(.init(from: 8, to: 16)) // a6
+        try? g.play(.init(from: 36, to: 28)) // e5
+        try? g.play(.init(from: 11, to: 27)) // d7-d5（双步）
+        XCTAssertTrue(g.legalMoves().contains(.init(from: 28, to: 19)), "白兵应可吃过路兵 d6")
+        try? g.play(.init(from: 28, to: 19)) // exd6
+        XCTAssertEqual(g.board[27], 0, "被吃过路兵应消失")
+        XCTAssertEqual(g.board[19], 1)
     }
 
     func testPromotionGeneratesFourMoves() {
@@ -102,7 +102,7 @@ final class ChessTests: XCTestCase {
         var b = Array(repeating: UInt8(0), count: 64)
         b[7] = 0b1110
         b[21] = 6
-        b[13] = 5
+        b[14] = 5
         let g = Chess(board: b, player: 1)
         XCTAssertTrue(g.isOver)
         XCTAssertEqual(g.score(for: 1), 0.0)
@@ -110,18 +110,17 @@ final class ChessTests: XCTestCase {
     }
 
     func testAIFindsMateInOne() {
-        // 白后 h2，白王 g6，黑王 h8：Qh7#（h7 受 g6 王保护）
+        // 白后 h2，白王 g6，黑王 h8：一手杀（Qh7# / Qg7# 类）
         var b = Array(repeating: UInt8(0), count: 64)
         b[7] = 0b1110
-        b[14] = 6
-        b[23] = 5
+        b[22] = 6
+        b[55] = 5
         let g = Chess(board: b, player: 0)
         let r = ChessAI.bestMove(in: g, difficulty: .celestial, rng: SplitMix64(seed: 5))
-        XCTAssertEqual(r.move?.from, 23)
-        XCTAssertEqual(r.move?.to, 15, "AI 应找到 Qh7#")
+        XCTAssertNotNil(r.move)
         var after = g
         try? after.play(r.move!)
-        XCTAssertTrue(after.isOver)
+        XCTAssertTrue(after.isOver, "AI 应找到一手杀，实际走了 \(String(describing: r.move))")
         XCTAssertEqual(after.score(for: 0), 1.0)
     }
 
