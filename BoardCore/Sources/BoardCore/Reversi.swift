@@ -70,7 +70,7 @@ public struct Reversi: BoardGame {
                 moves.append(.init(square: UInt8(sq)))
             }
         }
-        if moves.isEmpty && mine != 0 {
+        if moves.isEmpty {
             // 当前无子可下 → 对方仍可下则生成虚着
             let oppMoves = movesFor(player: 1 - currentPlayer)
             if !oppMoves.isEmpty { return [.pass] }
@@ -157,18 +157,18 @@ public struct Reversi: BoardGame {
         score += (myMob - oppMob) * 0.35
 
         // 角与角邻
-        for corner in cornerSquares {
+        for corner in Self.cornerSquares {
             let bit = UInt64(1) << corner
             if me & bit != 0 { score += 25 }
             else if opp & bit != 0 { score -= 25 }
             else if all & bit == 0 {
                 // 空角旁的危险位置
-                for x in xsq[corner]! {
+                for x in Self.xsq[corner]! {
                     let xb = UInt64(1) << x
                     if me & xb != 0 { score -= 9 }
                     else if opp & xb != 0 { score += 9 }
                 }
-                for c in csq[corner]! {
+                for c in Self.csq[corner]! {
                     let cb = UInt64(1) << c
                     if me & cb != 0 { score -= 4 }
                     else if opp & cb != 0 { score += 4 }
