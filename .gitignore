@@ -1,0 +1,15 @@
+# Xcode / Swift
+*.xcodeproj
+build/
+.build/
+DerivedData/
+*.xcarchive
+.swiftpm/
+*.o
+*.dSYM/
+
+# macOS
+.DS_Store
+
+# 临时
+*.log
