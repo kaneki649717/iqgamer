@@ -36,6 +36,8 @@ struct GameView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
 
+                DifficultyPill(session: session)
+
                 ControlBar(session: session, onNewGame: { showSetup = true }, onResign: resign)
                     .padding(.horizontal, 18)
                     .padding(.bottom, 8)
@@ -96,6 +98,41 @@ struct GameView: View {
     }
 }
 
+// MARK: - 对局内难度条（填充棋盘下方空间）
+
+struct DifficultyPill: View {
+    @ObservedObject var session: GameSession
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(AIDifficulty.allCases, id: \.self) { d in
+                Button {
+                    guard session.difficulty != d else { return }
+                    SoundService.shared.play(.click); SoundService.shared.haptic(.uiTap)
+                    session.difficulty = d
+                    UserDefaults.standard.set(d.rawValue, forKey: "difficulty")
+                } label: {
+                    Text(d.displayName)
+                        .font(.system(size: 12, weight: session.difficulty == d ? .semibold : .regular))
+                        .padding(.vertical, 7)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            Capsule()
+                                .fill(session.difficulty == d ? Color.primary.opacity(0.9) : Color.clear)
+                        )
+                        .foregroundStyle(session.difficulty == d ? colorSchemeText : .secondary)
+                }
+            }
+        }
+        .padding(4)
+        .liquidGlass(cornerRadius: 20)
+        .padding(.horizontal, 18)
+    }
+
+    @Environment(\.colorScheme) private var colorScheme
+    private var colorSchemeText: Color { colorScheme == .dark ? .black : .white }
+}
+
 // MARK: - 顶部对局信息
 
 struct PlayersBar: View {
@@ -105,7 +142,7 @@ struct PlayersBar: View {
         HStack(spacing: 10) {
             playerChip(
                 title: "AI · \(session.difficulty.displayName)",
-                subtitle: session.currentPlayer == (session.humanFirst ? 1 : 0) ? "思考中…" : "等待",
+                subtitle: session.currentPlayer != session.humanColor && !session.isOver ? "思考中…" : "等待",
                 active: session.currentPlayer != session.humanColor && !session.isOver,
                 icon: "cpu"
             )
@@ -133,13 +170,13 @@ struct PlayersBar: View {
         .overlay {
             if active {
                 RoundedRectangle(cornerRadius: 19)
-                    .strokeBorder(Color.qiAccent.opacity(0.8), lineWidth: 1.5)
+                    .strokeBorder(Color.primary.opacity(0.7), lineWidth: 1.5)
             }
         }
     }
 }
 
-// MARK: - 底部控制条
+// MARK: - 底部控制条（四个按钮统一尺寸）
 
 struct ControlBar: View {
     @ObservedObject var session: GameSession
@@ -147,36 +184,33 @@ struct ControlBar: View {
     var onResign: () -> Void
 
     var body: some View {
-        HStack {
+        HStack(spacing: 10) {
             control("新对局", icon: "arrow.counterclockwise") { onNewGame() }
             control("提示", icon: "lightbulb") { session.requestHint() }
                 .disabled(session.isOver || session.aiThinking)
-            control("悔棋", icon: "undo") { session.undo() }
+            control("悔棋", icon: "arrow.uturn.backward") { session.undo() }
                 .disabled(!session.canUndo || session.aiThinking)
-            control("认输", icon: "flag") { onResign() }
+            control("认输", icon: "flag", danger: true) { session.resign() }
                 .disabled(session.isOver)
         }
         .padding(.vertical, 10)
         .liquidGlass(cornerRadius: 28)
-        .overlay {
-            if session.aiThinking {
-                Capsule()
-                    .fill(Color.qiAccent.opacity(0.25))
-                    .frame(width: 120, height: 3)
-                    .offset(y: 30)
-                    .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: session.aiThinking)
-            }
-        }
     }
 
-    private func control(_ title: String, icon: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: 3) {
-                Image(systemName: icon).font(.system(size: 17, weight: .semibold))
-                Text(title).font(.system(size: 10))
+    private func control(_ title: String, icon: String, danger: Bool = false, action: @escaping () -> Void) -> some View {
+        Button {
+            SoundService.shared.play(.click); SoundService.shared.haptic(.uiTap)
+            action()
+        } label: {
+            VStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 17, weight: .semibold))
+                    .frame(height: 20)
+                Text(title)
+                    .font(.system(size: 11))
             }
-            .frame(maxWidth: .infinity)
-            .foregroundStyle(title == "认输" ? Color.red.opacity(0.9) : .primary)
+            .frame(maxWidth: .infinity, minHeight: 46)
+            .foregroundStyle(danger ? Color.red.opacity(0.9) : .primary)
         }
         .glassButtonStyle(cornerRadius: 20)
     }
@@ -253,20 +287,25 @@ struct SetupSheet: View {
                         .pickerStyle(.segmented)
                     }
                 }
-                Button {
-                    // 同步回全局默认
-                    UserDefaults.standard.set(session.difficulty.rawValue, forKey: "difficulty")
-                    UserDefaults.standard.set(session.humanFirst, forKey: "humanFirst")
-                    UserDefaults.standard.set(session.goBoardSize, forKey: "goBoardSize")
-                    setupDone = true
-                    dismiss()
-                    onStart()
-                } label: {
-                    Text("开始对局")
-                        .font(.system(size: 16, weight: .semibold))
-                        .frame(maxWidth: .infinity)
+                Section {
+                    Button {
+                        UserDefaults.standard.set(session.difficulty.rawValue, forKey: "difficulty")
+                        UserDefaults.standard.set(session.humanFirst, forKey: "humanFirst")
+                        UserDefaults.standard.set(session.goBoardSize, forKey: "goBoardSize")
+                        setupDone = true
+                        dismiss()
+                        onStart()
+                    } label: {
+                        Text("开始对局")
+                            .font(.system(size: 16, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 6)
+                    }
+                    .listRowBackground(Color.black)
+                    .foregroundStyle(.white)
+                } footer: {
+                    Text("难度与执子将保存为默认设置").font(.system(size: 11))
                 }
-                .listRowBackground(Color.primary)
             }
             .navigationTitle("新对局")
             .navigationBarTitleDisplayMode(.inline)

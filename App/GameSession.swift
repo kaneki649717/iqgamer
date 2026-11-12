@@ -96,6 +96,24 @@ final class GameSession: ObservableObject {
         !isOver && currentPlayer == humanColor
     }
 
+    /// 盘面总子数（用于吃子音判定）
+    private func pieceCount() -> Int {
+        switch gameID {
+        case .go: return go.board.reduce(0) { $0 + ($1 != 0 ? 1 : 0) }
+        case .shogi: return shogi.board.reduce(0) { $0 + ($1 != 0 ? 1 : 0) }
+        case .xiangqi: return xiangqi.board.reduce(0) { $0 + ($1 != 0 ? 1 : 0) }
+        case .chess: return chess.board.reduce(0) { $0 + ($1 != 0 ? 1 : 0) }
+        case .draughts: return draughts.squares.reduce(0) { $0 + ($1 != 0 ? 1 : 0) }
+        case .gomoku: return gomoku.board.reduce(0) { $0 + ($1 != 0 ? 1 : 0) }
+        case .reversi: return reversi.blackCount + reversi.whiteCount
+        }
+    }
+
+    private func bumpStat(_ key: String) {
+        let d = UserDefaults.standard
+        d.set((d.integer(forKey: key)) + 1, forKey: key)
+    }
+
     // MARK: - 认输 / 清除结果
 
     func resign() {
@@ -186,6 +204,7 @@ final class GameSession: ObservableObject {
         guard currentPlayerIsHuman, !aiThinking else { return }
         hintDescription = nil
         pushSnapshot()
+        let before = pieceCount()
         do {
             try play(self)
             sessionPly += 1
@@ -193,6 +212,7 @@ final class GameSession: ObservableObject {
             popSnapshot()
             return
         }
+        SoundService.shared.moveFeedback(gameID: gameID, capture: pieceCount() < before)
         updateResult()
         scheduleAIIfNeeded()
     }
@@ -225,8 +245,10 @@ final class GameSession: ObservableObject {
                         self?.aiThinking = false
                         return
                     }
+                    let before = self.pieceCount()
                     self.pushSnapshot()
                     apply()
+                    SoundService.shared.moveFeedback(gameID: self.gameID, capture: self.pieceCount() < before)
                     self.aiThinking = false
                     self.sessionPly += 1
                     self.updateResult()
@@ -311,9 +333,18 @@ final class GameSession: ObservableObject {
             }
         }()
         switch s {
-        case 1.0: resultText = "你赢了 🎉"
-        case 0.0: resultText = "AI 获胜"
-        case 0.5: resultText = "和棋"
+        case 1.0:
+            resultText = "你赢了 🎉"
+            SoundService.shared.play(.win); SoundService.shared.haptic(.win)
+            bumpStat("stats_wins")
+        case 0.0:
+            resultText = "AI 获胜"
+            SoundService.shared.play(.lose); SoundService.shared.haptic(.lose)
+            bumpStat("stats_losses")
+        case 0.5:
+            resultText = "和棋"
+            SoundService.shared.play(.draw); SoundService.shared.haptic(.draw)
+            bumpStat("stats_draws")
         default: resultText = "对局结束"
         }
     }
@@ -330,7 +361,7 @@ final class GameSession: ObservableObject {
         case reversiMove(Reversi.ReversiMove)
     }
 
-    nonisolated static let files = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
+    nonisolated static let files = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t"]
 
     nonisolated static func describe(_ gid: GameID, _ m: AnyMove, goSize: Int) -> String {
         switch (gid, m) {
