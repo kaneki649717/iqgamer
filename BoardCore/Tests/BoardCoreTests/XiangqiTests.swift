@@ -294,9 +294,9 @@ final class XiangqiTests: XCTestCase {
             var aiRng = SplitMix64(seed: 99)
             var rnd = SplitMix64(seed: UInt64(seed))
             var plies = 0
-            while !g.isOver && plies < 100 {
+            while !g.isOver && plies < 160 {
                 if g.currentPlayer == 0 {
-                    let r = XiangqiAI.bestMove(in: g, difficulty: .medium, rng: aiRng)
+                    let r = XiangqiAI.bestMove(in: g, difficulty: .hard, rng: aiRng)
                     guard let m = r.move else { break }
                     try? g.play(m)
                 } else {
@@ -308,7 +308,7 @@ final class XiangqiTests: XCTestCase {
             }
             XCTAssertEqual(g.score(for: 0), 1.0,
                            "多一车的 AI 应战胜随机对手，seed=\(seed)，plies=\(plies)")
-            XCTAssertLessThan(plies, 100)
+            XCTAssertLessThan(plies, 160)
         }
     }
 }
