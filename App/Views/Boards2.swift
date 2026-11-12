@@ -13,6 +13,8 @@ struct ChessBoardView: View {
     private var flip: Bool { session.humanColor == 1 }
     private var chess: Chess { session.chess }
 
+    private func real(_ dr: Int) -> Int { flip ? 7 - dr : dr }
+
     private func legalIfStale() -> [Chess.ChessMove] {
         let key = chess.ply * 2 + chess.currentPlayer
         if key != cacheKey {
