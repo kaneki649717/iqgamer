@@ -9,12 +9,19 @@ jobs:
   test:
     name: 单元测试（Linux，省额度）
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
       - uses: swift-actions/setup-swift@v2
         with:
           swift-version: "6.0.2"
+      - name: Cache SwiftPM build
+        uses: actions/cache@v4
+        with:
+          path: BoardCore/.build
+          key: swiftpm-release-${{ hashFiles('BoardCore/Package.swift') }}-${{ github.sha }}
+          restore-keys: |
+            swiftpm-release-${{ hashFiles('BoardCore/Package.swift') }}-
       - name: Run tests
         working-directory: BoardCore
         run: swift test -c release --parallel
