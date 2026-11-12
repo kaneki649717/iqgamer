@@ -69,6 +69,38 @@ final class GomokuTests: XCTestCase {
         XCTAssertEqual(r.move, m(8, 7), "AI 必须堵白的唯一成五点，实际 \(String(describing: r.move))")
     }
 
+    /// 回归测试：评估必须看见下半区威胁（旧实现每条线只扫线头窗口 → 下半区全盲）
+    func testEvaluateSeesLowerHalfThreats() {
+        var g = Gomoku()
+        // 黑在下半区纵向连三 (10,10)(11,10)(12,10)，两端 (9,10)(13,10) 空
+        let seq: [(Gomoku.GomokuMove, Gomoku.GomokuMove)] = [
+            (m(10, 10), m(0, 0)),
+            (m(11, 10), m(1, 0)),
+            (m(12, 10), m(2, 14)),
+        ]
+        for (b, w) in seq { try? g.play(b); try? g.play(w) }
+        // 6 手后轮黑走，黑有活三 → 黑视角评估必须显著为正
+        XCTAssertGreaterThan(g.evaluate(), 15,
+                             "下半区黑活三必须被评估看见（盲区回归），当前 \(g.evaluate())")
+    }
+
+    /// 回归测试：AI 必须堵住下半区的纵向冲四
+    func testAIBlocksVerticalFourLowerHalf() {
+        var g = Gomoku()
+        // 黑子散落在顶区（无威胁）；白在下半区纵向四连 (8,7)-(11,7)
+        let seq: [(Gomoku.GomokuMove, Gomoku.GomokuMove)] = [
+            (m(0, 0),  m(8, 7)),
+            (m(0, 3),  m(9, 7)),
+            (m(0, 6),  m(10, 7)),
+            (m(0, 9),  m(11, 7)),
+        ]
+        for (b, w) in seq { try? g.play(b); try? g.play(w) }
+        // 白冲四两端 (7,7)(12,7) 均空 → 黑必堵其一（虽然活四已无解，但堵是唯一合理着法）
+        let r = GomokuAI.bestMove(in: g, difficulty: .celestial, rng: SplitMix64(seed: 9))
+        XCTAssertTrue(r.move == m(7, 7) || r.move == m(12, 7),
+                      "AI 必须堵下半区纵向冲四，实际 \(String(describing: r.move))")
+    }
+
     func testZobristReplay() {
         var g1 = Gomoku()
         var rng = SplitMix64(seed: 88)

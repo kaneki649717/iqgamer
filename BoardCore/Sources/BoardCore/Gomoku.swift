@@ -106,6 +106,8 @@ public struct Gomoku: BoardGame {
     }
 
     /// 对 p 的形势分（从 p 视角）
+    /// v1.3 修复：窗口沿整条线滑动评估（旧实现只扫线头一个 6 格窗口，
+    /// 导致棋盘第 6 行/列以下全部成为评估盲区，AI 对下半区威胁完全失明）
     func lineScore(player p: Int) -> Double {
         let me = p + 1, op = 2 - p
         var total = 0.0
@@ -113,9 +115,6 @@ public struct Gomoku: BoardGame {
         for r in 0..<15 {
             for c in 0..<15 {
                 for (dr, dc) in dirs {
-                    // 只从每条线的头部开始扫，避免重复计分
-                    let pr = r - dr, pc = c - dc
-                    if pr >= 0 && pr < 15 && pc >= 0 && pc < 15 { continue }
                     var myCount = 0, opCount = 0
                     var len = 0
                     var rr = r, cc = c
