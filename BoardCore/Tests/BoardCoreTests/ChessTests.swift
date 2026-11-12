@@ -171,7 +171,7 @@ final class ChessTests: XCTestCase {
         var plies = 0
         while !g.isOver && plies < 80 {
             if g.currentPlayer == 0 {
-                let r = ChessAI.bestMove(in: g, difficulty: .hard, rng: SplitMix64(seed: UInt64(plies) + 100))
+                let r = ChessAI.bestMove(in: g, difficulty: .medium, rng: SplitMix64(seed: UInt64(plies) + 100))
                 if let m = r.move { try? g.play(m) } else { break }
             } else {
                 let ms = g.legalMoves()

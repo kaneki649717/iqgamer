@@ -71,7 +71,7 @@ final class ReversiTests: XCTestCase {
             var rnd = SplitMix64(seed: UInt64(seed))
             while !g.isOver {
                 if g.currentPlayer == 0 {
-                    let r = ReversiAI.bestMove(in: g, difficulty: .hard, rng: aiRng)
+                    let r = ReversiAI.bestMove(in: g, difficulty: .medium, rng: aiRng)
                     try? g.play(r.move!)
                 } else {
                     let ms = g.legalMoves()

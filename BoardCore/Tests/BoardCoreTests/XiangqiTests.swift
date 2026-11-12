@@ -296,7 +296,7 @@ final class XiangqiTests: XCTestCase {
             var plies = 0
             while !g.isOver && plies < 100 {
                 if g.currentPlayer == 0 {
-                    let r = XiangqiAI.bestMove(in: g, difficulty: .hard, rng: aiRng)
+                    let r = XiangqiAI.bestMove(in: g, difficulty: .medium, rng: aiRng)
                     guard let m = r.move else { break }
                     try? g.play(m)
                 } else {

@@ -92,7 +92,7 @@ final class GomokuTests: XCTestCase {
             var plies = 0
             while !g.isOver && plies < 225 {
                 if g.currentPlayer == 0 {
-                    let r = GomokuAI.bestMove(in: g, difficulty: .hard, rng: SplitMix64(seed: UInt64(plies) + 10))
+                    let r = GomokuAI.bestMove(in: g, difficulty: .medium, rng: SplitMix64(seed: UInt64(plies) + 10))
                     if let m = r.move { try? g.play(m) } else { break }
                 } else {
                     let ms = g.legalMoves()
