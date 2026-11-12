@@ -381,7 +381,7 @@ public struct Chess: BoardGame {
         // 过路兵目标
         if myType == 1, abs(to - from) == 16 {
             newEP = UInt8((from + to) / 2)
-            key ^= Self.zEP[newEP & 7]
+            key ^= Self.zEP[Int(newEP) & 7]
         }
 
         // 王位置
