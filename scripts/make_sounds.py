@@ -152,3 +152,23 @@ cap_c = mix(
 )
 write_wav("capture_c.wav", cap_c)
 print("V12_DONE")
+# ===== v1.3：第 4 组变体 =====
+wood_d = mix(
+    tone(105, 0.24, 24, 1.0, harmonics=((1, 1.0), (1.6, 0.35), (2.8, 0.12))),
+    noise_burst(0.03, 45, 0.28, seed=81),
+)
+write_wav("place_wood_d.wav", wood_d)
+
+stone_d = mix(
+    tone(290, 0.10, 62, 0.75, harmonics=((1, 1.0), (3.1, 0.45))),
+    tone(2400, 0.02, 150, 0.15),
+)
+write_wav("place_stone_d.wav", stone_d)
+
+cap_d = mix(
+    tone(125, 0.22, 28, 1.0, harmonics=((1, 1.0), (2.0, 0.4))),
+    noise_burst(0.035, 55, 0.45, seed=91),
+    tone(70, 0.26, 22, 0.5),
+)
+write_wav("capture_d.wav", cap_d)
+print("V13_DONE")

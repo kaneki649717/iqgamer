@@ -35,6 +35,7 @@ final class GameSession: ObservableObject {
     var reversiHistory: [Reversi] = []
 
     private var generation = 0
+    private var aiStartedAt: Date?
 
     init(gameID: GameID) {
         self.gameID = gameID
@@ -114,6 +115,19 @@ final class GameSession: ObservableObject {
         d.set((d.integer(forKey: key)) + 1, forKey: key)
     }
 
+    /// 看门狗：AI 卡死自愈 + AI 调度丢失自愈（GameView 定时调用）
+    func watchdogTick() {
+        if aiThinking, let t = aiStartedAt, Date().timeIntervalSince(t) > 15 {
+            aiThinking = false
+            aiStartedAt = nil
+            generation += 1
+            scheduleAIIfNeeded()
+        }
+        if !isOver, resultText == nil, !currentPlayerIsHuman, !aiThinking {
+            scheduleAIIfNeeded()
+        }
+    }
+
     // MARK: - 认输 / 清除结果
 
     func resign() {
@@ -131,6 +145,7 @@ final class GameSession: ObservableObject {
     func newGame() {
         generation += 1
         aiThinking = false
+        aiStartedAt = nil
         resultText = nil
         hintDescription = nil
         sessionPly = 0
@@ -149,6 +164,7 @@ final class GameSession: ObservableObject {
     func undo() {
         generation += 1
         aiThinking = false
+        aiStartedAt = nil
         resultText = nil
         hintDescription = nil
         // 连续回退到「轮到人」的局面
@@ -234,6 +250,7 @@ final class GameSession: ObservableObject {
     func scheduleAIIfNeeded() {
         guard !isOver, resultText == nil, !currentPlayerIsHuman, !aiThinking else { return }
         aiThinking = true
+        aiStartedAt = Date()
         generation += 1
         let gen = generation
         let d = difficulty

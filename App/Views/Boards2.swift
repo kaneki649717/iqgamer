@@ -43,9 +43,10 @@ struct ChessBoardView: View {
                                     if selected == idx {
                                         Rectangle().fill(Color.qiAccent.opacity(0.22))
                                     }
-                                    if targets.contains(idx) {
-                                        Circle().fill(Color.qiAccent.opacity(0.4))
-                                            .frame(width: cell * 0.22, height: cell * 0.22)
+                                    if targets.contains(idx) && chess.board[idx] != 0 {
+                                        RoundedRectangle(cornerRadius: cell * 0.16)
+                                            .strokeBorder(Color.red.opacity(0.85), lineWidth: 2.5)
+                                            .frame(width: cell * 0.94, height: cell * 0.94)
                                     }
                                     if chess.board[idx] != 0 {
                                         ChessPieceView(
@@ -54,6 +55,9 @@ struct ChessBoardView: View {
                                         )
                                         .frame(width: cell * 0.82, height: cell * 0.82)
                                         .shadow(color: .black.opacity(0.25), radius: 1.5, y: 1)
+                                    } else if targets.contains(idx) {
+                                        Circle().fill(Color.qiAccent.opacity(0.4))
+                                            .frame(width: cell * 0.22, height: cell * 0.22)
                                     }
                                 }
                                 .frame(width: cell, height: cell)
@@ -171,6 +175,13 @@ struct XiangqiBoardView: View {
                                 isRed: Xiangqi.colorOf(game.board[idx]) == 0
                             )
                             .scaleEffect(selected == idx ? 1.08 : 1)
+                            .overlay {
+                                if targets.contains(idx) {
+                                    Circle()
+                                        .strokeBorder(Color.red.opacity(0.85), lineWidth: 2.5)
+                                        .frame(width: cw * 0.9, height: cw * 0.9)
+                                }
+                            }
                         } else if targets.contains(idx) {
                             Circle().fill(Color.qiAccent.opacity(0.5))
                                 .frame(width: cw * 0.22, height: cw * 0.22)
@@ -304,6 +315,13 @@ struct ShogiBoardView: View {
                                                 promoted: Shogi.isPromoted(game.board[idx])
                                             )
                                             .scaleEffect(selected == idx ? 1.08 : 1)
+                                            .overlay {
+                                                if targets.contains(idx) {
+                                                    RoundedRectangle(cornerRadius: cell * 0.14)
+                                                        .strokeBorder(Color.red.opacity(0.85), lineWidth: 2.5)
+                                                        .frame(width: cell * 0.94, height: cell * 0.94)
+                                                }
+                                            }
                                         } else if targets.contains(idx) {
                                             Circle().fill(Color.qiAccent.opacity(0.5))
                                                 .frame(width: cell * 0.2, height: cell * 0.2)

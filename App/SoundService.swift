@@ -23,9 +23,9 @@ final class SoundService {
         case uiTap
     }
 
-    static let placeStyleNames = ["古典木声", "厚实木声", "轻巧木声"]
-    static let stoneStyleNames = ["清脆石子", "明亮玉子", "柔和石子"]
-    static let captureStyleNames = ["厚实吃子", "连贯双击", "轻巧吃子"]
+    static let placeStyleNames = ["古典木声", "厚实木声", "轻巧木声", "沉稳大木"]
+    static let stoneStyleNames = ["清脆石子", "明亮玉子", "柔和石子", "温润瓷石"]
+    static let captureStyleNames = ["厚实吃子", "连贯双击", "轻巧吃子", "低频重击"]
 
     private var players: [String: AVAudioPlayer] = [:]
     private let hapticImpact = UIImpactFeedbackGenerator(style: .light)
@@ -35,9 +35,9 @@ final class SoundService {
     private init() {
         hapticImpact.prepare()
         hapticMedium.prepare()
-        preload(["place_wood_a", "place_wood_b", "place_wood_c",
-                 "place_stone_a", "place_stone_b", "place_stone_c",
-                 "capture_a", "capture_b", "capture_c",
+        preload(["place_wood_a", "place_wood_b", "place_wood_c", "place_wood_d",
+                 "place_stone_a", "place_stone_b", "place_stone_c", "place_stone_d",
+                 "capture_a", "capture_b", "capture_c", "capture_d",
                  "win", "lose", "draw", "click"])
         try? AVAudioSession.sharedInstance().setCategory(.ambient, options: [.mixWithOthers])
     }
@@ -68,8 +68,8 @@ final class SoundService {
         Float(UserDefaults.standard.object(forKey: "soundVolume") as? Double ?? 0.9)
     }
 
-    private var placeStyle: Int { min(UserDefaults.standard.integer(forKey: "placeStyle"), 2) }
-    private var captureStyle: Int { min(UserDefaults.standard.integer(forKey: "captureStyle"), 2) }
+    private var placeStyle: Int { min(UserDefaults.standard.integer(forKey: "placeStyle"), 3) }
+    private var captureStyle: Int { min(UserDefaults.standard.integer(forKey: "captureStyle"), 3) }
 
     // MARK: - 播放
 
@@ -99,7 +99,7 @@ final class SoundService {
     /// 落子反馈（风格按设置），capture 由调用方判定
     func moveFeedback(gameID: GameID, capture: Bool) {
         if capture {
-            play(file: "capture" + ["_a", "_b", "_c"][captureStyle])
+            play(file: "capture" + ["_a", "_b", "_c", "_d"][captureStyle])
             haptic(.capture)
             return
         }
@@ -108,7 +108,7 @@ final class SoundService {
         case .go, .gomoku, .reversi: family = "stone"
         default: family = "wood"
         }
-        play(file: "place_\(family)_" + ["a", "b", "c"][placeStyle])
+        play(file: "place_\(family)_" + ["a", "b", "c", "d"][placeStyle])
         haptic(.place)
     }
 }

@@ -38,6 +38,14 @@ struct GameView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
 
+                if session.isOver && session.resultText == nil {
+                    Text("对局已结束 · 点「新对局」开新一局")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 14).padding(.vertical, 8)
+                        .liquidGlass(cornerRadius: 16)
+                }
+
                 DifficultyPill(session: session)
 
                 ControlBar(session: session, onNewGame: { showSetup = true }, onResign: resign)
@@ -80,6 +88,12 @@ struct GameView: View {
             }
         }
         .preferredColorScheme(AppTheme(rawValue: themeRaw)?.colorScheme)
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                session.watchdogTick()
+            }
+        }
     }
 
     @ViewBuilder
