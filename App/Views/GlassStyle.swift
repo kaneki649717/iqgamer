@@ -168,7 +168,7 @@ struct ShogiPieceView: View {
                         startPoint: .top, endPoint: .bottom
                     )
                 )
-                .overlay(ShogiTileShape().strokeBorder(Color.black.opacity(0.45), lineWidth: 0.8))
+                .overlay(ShogiTileShape().stroke(Color.black.opacity(0.45), lineWidth: 0.8))
                 .shadow(color: .black.opacity(0.28), radius: 1.8, y: 1.2)
             Text(text)
                 .font(.system(size: 15, weight: .semibold))

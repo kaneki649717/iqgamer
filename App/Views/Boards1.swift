@@ -163,7 +163,7 @@ struct GomokuBoardView: View {
 
     private func tap(_ idx: Int) {
         guard session.currentPlayer == session.humanColor, !session.gomoku.isOver, !session.aiThinking else { return }
-        session.playGomoku(Gomoku.GomokuMove(idx))
+        session.playGomoku(Gomoku.GomokuMove(UInt8(idx)))
     }
 }
 

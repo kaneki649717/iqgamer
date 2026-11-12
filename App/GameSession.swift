@@ -174,13 +174,13 @@ final class GameSession: ObservableObject {
 
     // MARK: - 人类走子（UI 调用，按棋种）
 
-    func playGo(_ move: GoGame.GoMove) { humanMove { $0.go.play(move) } }
-    func playShogi(_ move: Shogi.ShogiMove) { humanMove { $0.shogi.play(move) } }
-    func playXiangqi(_ move: Xiangqi.XiangqiMove) { humanMove { $0.xiangqi.play(move) } }
-    func playChess(_ move: Chess.ChessMove) { humanMove { $0.chess.play(move) } }
-    func playDraughts(_ move: Draughts.DraughtsMove) { humanMove { $0.draughts.play(move) } }
-    func playGomoku(_ move: Gomoku.GomokuMove) { humanMove { $0.gomoku.play(move) } }
-    func playReversi(_ move: Reversi.ReversiMove) { humanMove { $0.reversi.play(move) } }
+    func playGo(_ move: GoGame.GoMove) { humanMove { try $0.go.play(move) } }
+    func playShogi(_ move: Shogi.ShogiMove) { humanMove { try $0.shogi.play(move) } }
+    func playXiangqi(_ move: Xiangqi.XiangqiMove) { humanMove { try $0.xiangqi.play(move) } }
+    func playChess(_ move: Chess.ChessMove) { humanMove { try $0.chess.play(move) } }
+    func playDraughts(_ move: Draughts.DraughtsMove) { humanMove { try $0.draughts.play(move) } }
+    func playGomoku(_ move: Gomoku.GomokuMove) { humanMove { try $0.gomoku.play(move) } }
+    func playReversi(_ move: Reversi.ReversiMove) { humanMove { try $0.reversi.play(move) } }
 
     private func humanMove(_ play: (GameSession) throws -> Void) {
         guard currentPlayerIsHuman, !aiThinking else { return }
@@ -330,9 +330,9 @@ final class GameSession: ObservableObject {
         case reversiMove(Reversi.ReversiMove)
     }
 
-    static let files = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
+    nonisolated static let files = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
 
-    static func describe(_ gid: GameID, _ m: AnyMove, goSize: Int) -> String {
+    nonisolated static func describe(_ gid: GameID, _ m: AnyMove, goSize: Int) -> String {
         switch (gid, m) {
         case (.go, .goMove(let mv)):
             if mv.point == 65535 { return "停一手" }

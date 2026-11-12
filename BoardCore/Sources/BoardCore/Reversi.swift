@@ -6,6 +6,7 @@ import Foundation
 public struct Reversi: BoardGame {
     public struct ReversiMove: Hashable, Sendable, Comparable {
         public let square: UInt8 // 0..63，255 = 虚着
+        public init(square: UInt8) { self.square = square }
         public static let pass = ReversiMove(square: 255)
         public static func < (a: ReversiMove, b: ReversiMove) -> Bool { a.square < b.square }
     }

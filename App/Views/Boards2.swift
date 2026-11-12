@@ -215,7 +215,7 @@ struct XiangqiBoardCanvas: View {
             let river = Text("楚 河              漢 界")
                 .font(.system(size: ch * 0.5, weight: .medium))
                 .foregroundStyle(BoardPalette.gridLine)
-            ctx.draw(river.resolve(in: ctx.environment), at: CGPoint(x: size.width / 2, y: size.height / 2))
+            ctx.draw(ctx.resolve(river), at: CGPoint(x: size.width / 2, y: size.height / 2))
         }
         .background(RoundedRectangle(cornerRadius: 12).fill(BoardPalette.wood))
     }

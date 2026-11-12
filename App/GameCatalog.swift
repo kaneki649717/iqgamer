@@ -2,7 +2,7 @@ import SwiftUI
 import BoardCore
 
 /// 棋种在 App 里的展示信息
-struct GameCatalogItem: Identifiable {
+struct GameCatalogItem: Identifiable, Hashable {
     let id: GameID
     let name: String
     let subtitle: String
