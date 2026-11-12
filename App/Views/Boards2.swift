@@ -15,20 +15,18 @@ struct ChessBoardView: View {
 
     private func real(_ dr: Int) -> Int { flip ? 7 - dr : dr }
 
-    private func legalIfStale() -> [Chess.ChessMove] {
+    private func refreshLegal(force: Bool) {
         let key = chess.ply * 2 + chess.currentPlayer
-        if key != cacheKey {
-            cacheKey = key
-            legalCache = session.currentPlayer == session.humanColor ? chess.legalMoves() : []
-        }
-        return legalCache
+        guard force || key != cacheKey else { return }
+        cacheKey = key
+        legalCache = session.currentPlayer == session.humanColor && !session.aiThinking ? chess.legalMoves() : []
     }
 
     var body: some View {
         GeometryReader { geo in
             let side = min(geo.size.width, geo.size.height)
             let cell = side / 8
-            let legal = legalIfStale()
+            let legal = legalCache
             let targets: Set<Int> = selected.map { sel in Set(legal.filter { Int($0.from) == sel }.map { Int($0.to) }) } ?? []
             ZStack {
                 VStack(spacing: 0) {
@@ -72,6 +70,9 @@ struct ChessBoardView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .aspectRatio(1, contentMode: .fit)
+        .onAppear { refreshLegal(force: true) }
+        .onChange(of: session.sessionPly) { _, _ in refreshLegal(force: true) }
+        .onChange(of: session.humanFirst) { _, _ in refreshLegal(force: true) }
         .confirmationDialog("选择升变", isPresented: .init(get: { !promoCandidates.isEmpty }, set: { if !$0 { promoCandidates = [] } }), titleVisibility: .visible) {
             ForEach(promoCandidates, id: \.self) { m in
                 Button(promoName(m.promotion)) { session.playChess(m); selected = nil; promoCandidates = [] }
@@ -142,13 +143,11 @@ struct XiangqiBoardView: View {
     private var flip: Bool { session.humanColor == 1 }
     private var game: Xiangqi { session.xiangqi }
 
-    private func legalIfStale() -> [Xiangqi.XiangqiMove] {
+    private func refreshLegal(force: Bool) {
         let key = game.ply * 2 + game.currentPlayer
-        if key != cacheKey {
-            cacheKey = key
-            legalCache = session.currentPlayer == session.humanColor ? game.legalMoves() : []
-        }
-        return legalCache
+        guard force || key != cacheKey else { return }
+        cacheKey = key
+        legalCache = session.currentPlayer == session.humanColor && !session.aiThinking ? game.legalMoves() : []
     }
 
     var body: some View {
@@ -156,7 +155,7 @@ struct XiangqiBoardView: View {
             let side = min(geo.size.width, geo.size.height)
             let cw = side / 9.0
             let ch = side / 10.0
-            let legal = legalIfStale()
+            let legal = legalCache
             let targets: Set<Int> = selected.map { sel in Set(legal.filter { Int($0.from) == sel }.map { Int($0.to) }) } ?? []
             ZStack {
                 XiangqiBoardCanvas()
@@ -178,15 +177,18 @@ struct XiangqiBoardView: View {
                         }
                     }
                     .frame(width: cw * 0.78, height: cw * 0.78)
-                    .position(x: (CGFloat(c) + 0.5) * cw, y: (CGFloat(9 - (flip ? idx / 9 : 9 - idx / 9)) + 0.5) * ch)
-                    .onTapGesture { tap(idx, legal: legal) }
                     .contentShape(Rectangle())
+                    .onTapGesture { tap(idx, legal: legal) }
+                    .position(x: (CGFloat(c) + 0.5) * cw, y: (CGFloat(9 - (flip ? idx / 9 : 9 - idx / 9)) + 0.5) * ch)
                 }
             }
             .frame(width: side, height: side)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .aspectRatio(1, contentMode: .fit)
+        .onAppear { refreshLegal(force: true) }
+        .onChange(of: session.sessionPly) { _, _ in refreshLegal(force: true) }
+        .onChange(of: session.humanFirst) { _, _ in refreshLegal(force: true) }
     }
 
     static func pieceName(_ p: UInt8) -> String {
@@ -262,13 +264,11 @@ struct ShogiBoardView: View {
     private var flip: Bool { session.humanColor == 1 }
     private var game: Shogi { session.shogi }
 
-    private func legalIfStale() -> [Shogi.ShogiMove] {
+    private func refreshLegal(force: Bool) {
         let key = game.ply * 2 + game.currentPlayer
-        if key != cacheKey {
-            cacheKey = key
-            legalCache = session.currentPlayer == session.humanColor ? game.legalMoves() : []
-        }
-        return legalCache
+        guard force || key != cacheKey else { return }
+        cacheKey = key
+        legalCache = session.currentPlayer == session.humanColor && !session.aiThinking ? game.legalMoves() : []
     }
 
     var body: some View {
@@ -277,7 +277,7 @@ struct ShogiBoardView: View {
             GeometryReader { geo in
                 let side = min(geo.size.width, geo.size.height)
                 let cell = side / 9
-                let legal = legalIfStale()
+                let legal = legalCache
                 let targets: Set<Int> = selected.map { sel in
                     Set(legal.filter { $0.from != nil && Int($0.from!) == sel }.map { Int($0.to) })
                 } ?? []
@@ -324,6 +324,9 @@ struct ShogiBoardView: View {
             .aspectRatio(1, contentMode: .fit)
             handBar(player: 0)
         }
+        .onAppear { refreshLegal(force: true) }
+        .onChange(of: session.sessionPly) { _, _ in refreshLegal(force: true) }
+        .onChange(of: session.humanFirst) { _, _ in refreshLegal(force: true) }
         .confirmationDialog("是否升变？", isPresented: .init(get: { promoAsk != nil }, set: { if !$0 { promoAsk = nil } }), titleVisibility: .visible) {
             if let ask = promoAsk {
                 ForEach(ask.moves, id: \.self) { m in
@@ -431,20 +434,18 @@ struct DraughtsBoardView: View {
     private var flip: Bool { session.humanColor == 0 } // 白（先手）在顶部 → 人执白时翻转到下方
     private var game: Draughts { session.draughts }
 
-    private func legalIfStale() -> [Draughts.DraughtsMove] {
+    private func refreshLegal(force: Bool) {
         let key = game.ply * 2 + game.currentPlayer
-        if key != cacheKey {
-            cacheKey = key
-            legalCache = session.currentPlayer == session.humanColor ? game.legalMoves() : []
-        }
-        return legalCache
+        guard force || key != cacheKey else { return }
+        cacheKey = key
+        legalCache = session.currentPlayer == session.humanColor && !session.aiThinking ? game.legalMoves() : []
     }
 
     var body: some View {
         GeometryReader { geo in
             let side = min(geo.size.width, geo.size.height)
             let cell = side / 10
-            let legal = legalIfStale()
+            let legal = legalCache
             let targets: Set<Int> = selected.map { sel in
                 Set(legal.filter { Int($0.path.first ?? 255) == sel }.map { Int($0.path.last ?? 255) })
             } ?? []
@@ -492,6 +493,9 @@ struct DraughtsBoardView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .aspectRatio(1, contentMode: .fit)
+        .onAppear { refreshLegal(force: true) }
+        .onChange(of: session.sessionPly) { _, _ in refreshLegal(force: true) }
+        .onChange(of: session.humanFirst) { _, _ in refreshLegal(force: true) }
     }
 
     private func tap(_ idx: Int, legal: [Draughts.DraughtsMove]) {

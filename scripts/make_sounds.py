@@ -105,3 +105,50 @@ write_wav("lose.wav", lose)
 draw = mix(note(440.0, 0.7, 0.4), delay(note(440.0, 0.5, 0.25), 0.25))
 write_wav("draw.wav", draw)
 print("ALL_DONE")
+
+# ===== v1.2：多风格变体（供设置里挑选） =====
+
+# 落子·木声 乙：更闷更厚（低频为主）
+wood_b = mix(
+    tone(140, 0.20, 30, 1.0, harmonics=((1, 1.0), (2.0, 0.3))),
+    noise_burst(0.025, 60, 0.25, seed=21),
+)
+write_wav("place_wood_b.wav", wood_b)
+
+# 落子·木声 丙：轻巧干净（高频短促）
+wood_c = mix(
+    tone(320, 0.10, 55, 0.7, harmonics=((1, 1.0), (2.5, 0.3))),
+    noise_burst(0.012, 130, 0.3, seed=31),
+)
+write_wav("place_wood_c.wav", wood_c)
+
+# 落子·石声 乙：玉子感（更亮）
+stone_b = mix(
+    tone(340, 0.12, 50, 0.8, harmonics=((1, 1.0), (2.8, 0.5), (4.5, 0.2))),
+    noise_burst(0.012, 140, 0.35, seed=41),
+    tone(1800, 0.035, 90, 0.22),
+)
+write_wav("place_stone_b.wav", stone_b)
+
+# 落子·石声 丙：柔和（棉感）
+stone_c = mix(
+    tone(210, 0.13, 36, 0.6, harmonics=((1, 1.0), (1.8, 0.25))),
+    noise_burst(0.02, 55, 0.15, seed=51),
+)
+write_wav("place_stone_c.wav", stone_c)
+
+# 吃子 乙：干脆利落（双击更近）
+cap_b = mix(
+    tone(200, 0.14, 45, 0.9, harmonics=((1, 1.0), (2.6, 0.35))),
+    delay(tone(150, 0.16, 40, 0.75), 0.05),
+    delay(noise_burst(0.02, 90, 0.3, seed=61), 0.05),
+)
+write_wav("capture_b.wav", cap_b)
+
+# 吃子 丙：轻巧（单次清脆）
+cap_c = mix(
+    tone(420, 0.10, 60, 0.7, harmonics=((1, 1.0), (2.2, 0.3))),
+    noise_burst(0.012, 120, 0.3, seed=71),
+)
+write_wav("capture_c.wav", cap_c)
+print("V12_DONE")

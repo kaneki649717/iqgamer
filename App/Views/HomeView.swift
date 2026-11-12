@@ -202,12 +202,33 @@ struct SettingsView: View {
     @AppStorage("goBoardSize") private var goBoardSize = 9
     @AppStorage("soundOn") private var soundOn = true
     @AppStorage("hapticsOn") private var hapticsOn = true
+    @AppStorage("placeStyle") private var placeStyle = 0
+    @AppStorage("captureStyle") private var captureStyle = 0
+    @AppStorage("soundVolume") private var soundVolume = 0.9
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("反馈") {
                     Toggle("音效", isOn: $soundOn)
+                    if soundOn {
+                        Picker("落子音效", selection: $placeStyle) {
+                            ForEach(0..<SoundService.placeStyleNames.count, id: \.self) { i in
+                                Text(SoundService.placeStyleNames[i]).tag(i)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        Picker("吃子音效", selection: $captureStyle) {
+                            ForEach(0..<SoundService.captureStyleNames.count, id: \.self) { i in
+                                Text(SoundService.captureStyleNames[i]).tag(i)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        HStack {
+                            Text("音量")
+                            Slider(value: $soundVolume, in: 0...1)
+                        }
+                    }
                     Toggle("震动", isOn: $hapticsOn)
                 }
                 Section("主题") {

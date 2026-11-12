@@ -36,6 +36,22 @@ struct GoBoardView: View {
                         ctx.fill(Path(ellipseIn: CGRect(x: cx - 3, y: cy - 3, width: 6, height: 6)),
                                  with: .color(BoardPalette.gridLine))
                     }
+                    // 棋子直接画进 Canvas：尺寸像素级精确
+                    let stoneSize = cell * 0.92
+                    for idx in 0..<(n * n) {
+                        let v = go.board[idx]
+                        guard v != 0 else { continue }
+                        let r = idx / n, c = idx % n
+                        let cx = pad + CGFloat(c) * cell
+                        let cy = pad + CGFloat(r) * cell
+                        let rect = CGRect(x: cx - stoneSize / 2, y: cy - stoneSize / 2, width: stoneSize, height: stoneSize)
+                        let colors: [Color] = v == 1
+                            ? [Color(white: 0.42), Color(white: 0.04)]
+                            : [Color(white: 1.0), Color(white: 0.80)]
+                        let center = CGPoint(x: rect.midX - stoneSize * 0.15, y: rect.midY - stoneSize * 0.15)
+                        ctx.fill(Path(ellipseIn: rect), with: .radialGradient(Gradient(colors: colors), center: center, startRadius: 0, endRadius: stoneSize * 0.72))
+                        ctx.stroke(Path(ellipseIn: rect), with: .color(Color.black.opacity(v == 1 ? 0.3 : 0.12)), lineWidth: 0.7)
+                    }
                     // 坐标标注（字母列 + 数字行）
                     for i in 0..<n {
                         let pos = pad + CGFloat(i) * cell
@@ -44,19 +60,6 @@ struct GoBoardView: View {
                         let num = Text("\(n - i)").font(.system(size: max(8, cell * 0.30))).foregroundColor(BoardPalette.gridLine)
                         ctx.draw(ctx.resolve(num), at: CGPoint(x: pad - cell * 0.62, y: pos))
                     }
-                }
-
-                ForEach(0..<(n * n), id: \.self) { idx in
-                    let r = idx / n, c = idx % n
-                    Group {
-                        switch go.board[idx] {
-                        case 1: StoneView(color: Color(white: 0.12))
-                        case 2: StoneView(color: Color(white: 0.97))
-                        default: Color.clear
-                        }
-                    }
-                    .frame(width: cell * 0.84, height: cell * 0.84)
-                    .position(x: pad + CGFloat(c) * cell, y: pad + CGFloat(r) * cell)
                 }
 
                 ForEach(0..<(n * n), id: \.self) { idx in
@@ -138,6 +141,21 @@ struct GomokuBoardView: View {
                     let cx = pad + 7 * cell, cy = pad + 7 * cell
                     ctx.fill(Path(ellipseIn: CGRect(x: cx - 3.5, y: cy - 3.5, width: 7, height: 7)),
                              with: .color(BoardPalette.gridLine))
+                    let stoneSize = cell * 0.62
+                    for idx in 0..<(n * n) {
+                        let v = session.gomoku.board[idx]
+                        guard v != 0 else { continue }
+                        let r = idx / n, c = idx % n
+                        let sx = pad + CGFloat(c) * cell
+                        let sy = pad + CGFloat(r) * cell
+                        let rect = CGRect(x: sx - stoneSize / 2, y: sy - stoneSize / 2, width: stoneSize, height: stoneSize)
+                        let colors: [Color] = v == 1
+                            ? [Color(white: 0.42), Color(white: 0.04)]
+                            : [Color(white: 1.0), Color(white: 0.80)]
+                        let center = CGPoint(x: rect.midX - stoneSize * 0.15, y: rect.midY - stoneSize * 0.15)
+                        ctx.fill(Path(ellipseIn: rect), with: .radialGradient(Gradient(colors: colors), center: center, startRadius: 0, endRadius: stoneSize * 0.72))
+                        ctx.stroke(Path(ellipseIn: rect), with: .color(Color.black.opacity(v == 1 ? 0.3 : 0.12)), lineWidth: 0.7)
+                    }
                     for i in 0..<n {
                         let pos = pad + CGFloat(i) * cell
                         let letter = Text(GoBoardView.files[i]).font(.system(size: max(8, cell * 0.30))).foregroundColor(BoardPalette.gridLine)
@@ -145,19 +163,6 @@ struct GomokuBoardView: View {
                         let num = Text("\(n - i)").font(.system(size: max(8, cell * 0.30))).foregroundColor(BoardPalette.gridLine)
                         ctx.draw(ctx.resolve(num), at: CGPoint(x: pad - cell * 0.62, y: pos))
                     }
-                }
-
-                ForEach(0..<(n * n), id: \.self) { idx in
-                    let r = idx / n, c = idx % n
-                    Group {
-                        switch session.gomoku.board[idx] {
-                        case 1: StoneView(color: Color(white: 0.12))
-                        case 2: StoneView(color: Color(white: 0.97))
-                        default: Color.clear
-                        }
-                    }
-                    .frame(width: cell * 0.66, height: cell * 0.66)
-                    .position(x: pad + CGFloat(c) * cell, y: pad + CGFloat(r) * cell)
                 }
 
                 if let sq = Self.parseHintSquare(session.hintDescription ?? "") {

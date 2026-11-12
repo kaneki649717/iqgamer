@@ -121,163 +121,140 @@ struct StoneView: View {
     }
 }
 
-// MARK: - 国际象棋矢量棋子（v1.1 替换 unicode 字形）
+// MARK: - 国际象棋矢量棋子（v1.2：标准 Shape，按自身 rect 归一化，无负坐标）
 
 /// 极简矢量棋子：白子米白描黑边、黑子炭色描亮边
 struct ChessPieceView: View {
     let type: UInt8   // 1兵 2马 3象 4车 5后 6王
     let isWhite: Bool
 
+    var fill: Color { isWhite ? Color(red: 0.97, green: 0.95, blue: 0.90) : Color(red: 0.13, green: 0.13, blue: 0.16) }
+    var line: Color { isWhite ? Color.black.opacity(0.7) : Color.white.opacity(0.5) }
+
     var body: some View {
         GeometryReader { geo in
-            let s = geo.size.height
-            ZStack {
-                base(s).position(x: geo.size.width / 2, y: s * 0.88)
-                bodyShape(s).position(x: geo.size.width / 2, y: s * 0.52)
+            let w = geo.size.width, h = geo.size.height
+            ZStack(alignment: .bottom) {
+                ChessBodyShape(type: type)
+                    .fill(fill)
+                    .overlay(ChessBodyShape(type: type).stroke(line, lineWidth: w * 0.028))
+                    .frame(width: w * 0.9, height: h * 0.74)
+                    .padding(.bottom, h * 0.10)
+                ChessBaseShape()
+                    .fill(fill)
+                    .overlay(ChessBaseShape().stroke(line, lineWidth: w * 0.028))
+                    .frame(width: w * 0.62, height: h * 0.09)
+                    .padding(.bottom, h * 0.015)
             }
+            .frame(width: w, height: h)
         }
-        .aspectRatio(1, contentMode: .fit)
     }
+}
 
-    private var fill: Color { isWhite ? Color(red: 0.97, green: 0.95, blue: 0.90) : Color(red: 0.12, green: 0.12, blue: 0.15) }
-    private var line: Color { isWhite ? Color.black.opacity(0.75) : Color.white.opacity(0.55) }
+/// 棋子主体（按类型切换轮廓），坐标全部基于自身 rect 的比例
+struct ChessBodyShape: Shape {
+    let type: UInt8
 
-    private func base(_ s: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: s * 0.06)
-            .fill(fill)
-            .frame(width: s * 0.62, height: s * 0.10)
-            .overlay(RoundedRectangle(cornerRadius: s * 0.06).stroke(line, lineWidth: s * 0.025))
-    }
-
-    @ViewBuilder
-    private func bodyShape(_ s: CGFloat) -> some View {
+    func path(in rect: CGRect) -> Path {
+        let w = rect.width, h = rect.height
+        var p = Path()
         switch type {
-        case 1: pawn(s)
-        case 2: knight(s)
-        case 3: bishop(s)
-        case 4: rook(s)
-        case 5: queen(s)
-        default: king(s)
+        case 1: // 兵
+            p.addEllipse(in: CGRect(x: w * 0.35, y: h * 0.02, width: w * 0.30, height: w * 0.30))
+            p.move(to: CGPoint(x: w * 0.28, y: h * 0.92))
+            p.addQuadCurve(to: CGPoint(x: w * 0.44, y: h * 0.36), control: CGPoint(x: w * 0.28, y: h * 0.62))
+            p.addLine(to: CGPoint(x: w * 0.56, y: h * 0.36))
+            p.addQuadCurve(to: CGPoint(x: w * 0.72, y: h * 0.92), control: CGPoint(x: w * 0.72, y: h * 0.62))
+            p.closeSubpath()
+        case 2: // 马
+            p.move(to: CGPoint(x: w * 0.72, y: h * 0.92))
+            p.addLine(to: CGPoint(x: w * 0.72, y: h * 0.56))
+            p.addCurve(to: CGPoint(x: w * 0.46, y: h * 0.10),
+                       control1: CGPoint(x: w * 0.70, y: h * 0.38),
+                       control2: CGPoint(x: w * 0.58, y: h * 0.12))
+            p.addLine(to: CGPoint(x: w * 0.36, y: h * 0.18))
+            p.addLine(to: CGPoint(x: w * 0.42, y: h * 0.30))
+            p.addCurve(to: CGPoint(x: w * 0.28, y: h * 0.55),
+                       control1: CGPoint(x: w * 0.30, y: h * 0.40),
+                       control2: CGPoint(x: w * 0.26, y: h * 0.46))
+            p.addLine(to: CGPoint(x: w * 0.30, y: h * 0.92))
+            p.closeSubpath()
+        case 3: // 象
+            p.addEllipse(in: CGRect(x: w * 0.44, y: h * 0.0, width: w * 0.12, height: w * 0.12))
+            p.move(to: CGPoint(x: w * 0.50, y: h * 0.12))
+            p.addQuadCurve(to: CGPoint(x: w * 0.68, y: h * 0.52), control: CGPoint(x: w * 0.67, y: h * 0.24))
+            p.addLine(to: CGPoint(x: w * 0.74, y: h * 0.92))
+            p.addLine(to: CGPoint(x: w * 0.26, y: h * 0.92))
+            p.addLine(to: CGPoint(x: w * 0.32, y: h * 0.52))
+            p.addQuadCurve(to: CGPoint(x: w * 0.50, y: h * 0.12), control: CGPoint(x: w * 0.33, y: h * 0.24))
+            p.closeSubpath()
+        case 4: // 车
+            p.move(to: CGPoint(x: w * 0.24, y: h * 0.08))
+            p.addLine(to: CGPoint(x: w * 0.24, y: h * 0.22))
+            p.addLine(to: CGPoint(x: w * 0.36, y: h * 0.22))
+            p.addLine(to: CGPoint(x: w * 0.36, y: h * 0.12))
+            p.addLine(to: CGPoint(x: w * 0.44, y: h * 0.12))
+            p.addLine(to: CGPoint(x: w * 0.44, y: h * 0.22))
+            p.addLine(to: CGPoint(x: w * 0.56, y: h * 0.22))
+            p.addLine(to: CGPoint(x: w * 0.56, y: h * 0.12))
+            p.addLine(to: CGPoint(x: w * 0.64, y: h * 0.12))
+            p.addLine(to: CGPoint(x: w * 0.64, y: h * 0.22))
+            p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.22))
+            p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.08))
+            p.addLine(to: CGPoint(x: w * 0.68, y: h * 0.48))
+            p.addLine(to: CGPoint(x: w * 0.74, y: h * 0.92))
+            p.addLine(to: CGPoint(x: w * 0.26, y: h * 0.92))
+            p.addLine(to: CGPoint(x: w * 0.32, y: h * 0.48))
+            p.closeSubpath()
+        case 5: // 后
+            p.move(to: CGPoint(x: w * 0.22, y: h * 0.14))
+            p.addLine(to: CGPoint(x: w * 0.36, y: h * 0.50))
+            p.addLine(to: CGPoint(x: w * 0.22, y: h * 0.30))
+            p.addLine(to: CGPoint(x: w * 0.42, y: h * 0.52))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.10))
+            p.addLine(to: CGPoint(x: w * 0.58, y: h * 0.52))
+            p.addLine(to: CGPoint(x: w * 0.78, y: h * 0.30))
+            p.addLine(to: CGPoint(x: w * 0.64, y: h * 0.50))
+            p.addLine(to: CGPoint(x: w * 0.78, y: h * 0.14))
+            p.addQuadCurve(to: CGPoint(x: w * 0.72, y: h * 0.62), control: CGPoint(x: w * 0.68, y: h * 0.40))
+            p.addLine(to: CGPoint(x: w * 0.75, y: h * 0.92))
+            p.addLine(to: CGPoint(x: w * 0.25, y: h * 0.92))
+            p.addLine(to: CGPoint(x: w * 0.28, y: h * 0.62))
+            p.addQuadCurve(to: CGPoint(x: w * 0.22, y: h * 0.14), control: CGPoint(x: w * 0.32, y: h * 0.40))
+            p.closeSubpath()
+        default: // 王
+            p.move(to: CGPoint(x: w * 0.46, y: h * 0.0))
+            p.addLine(to: CGPoint(x: w * 0.54, y: h * 0.0))
+            p.addLine(to: CGPoint(x: w * 0.54, y: h * 0.07))
+            p.addLine(to: CGPoint(x: w * 0.61, y: h * 0.07))
+            p.addLine(to: CGPoint(x: w * 0.61, y: h * 0.15))
+            p.addLine(to: CGPoint(x: w * 0.54, y: h * 0.15))
+            p.addLine(to: CGPoint(x: w * 0.54, y: h * 0.24))
+            p.addLine(to: CGPoint(x: w * 0.46, y: h * 0.24))
+            p.addLine(to: CGPoint(x: w * 0.46, y: h * 0.15))
+            p.addLine(to: CGPoint(x: w * 0.39, y: h * 0.15))
+            p.addLine(to: CGPoint(x: w * 0.39, y: h * 0.07))
+            p.addLine(to: CGPoint(x: w * 0.46, y: h * 0.07))
+            p.closeSubpath()
+            p.move(to: CGPoint(x: w * 0.26, y: h * 0.28))
+            p.addQuadCurve(to: CGPoint(x: w * 0.50, y: h * 0.40), control: CGPoint(x: w * 0.34, y: h * 0.32))
+            p.addQuadCurve(to: CGPoint(x: w * 0.74, y: h * 0.28), control: CGPoint(x: w * 0.66, y: h * 0.32))
+            p.addLine(to: CGPoint(x: w * 0.70, y: h * 0.58))
+            p.addLine(to: CGPoint(x: w * 0.75, y: h * 0.92))
+            p.addLine(to: CGPoint(x: w * 0.25, y: h * 0.92))
+            p.addLine(to: CGPoint(x: w * 0.30, y: h * 0.58))
+            p.closeSubpath()
         }
+        return p
     }
+}
 
-    private func stroked(_ p: Path, _ s: CGFloat) -> some View {
-        p.fill(fill).overlay(p.stroke(line, lineWidth: s * 0.03))
-    }
-
-    private func pawn(_ s: CGFloat) -> some View {
-        let p = Path { path in
-            path.addEllipse(in: CGRect(x: -s * 0.14, y: -s * 0.42, width: s * 0.28, height: s * 0.28))
-            path.move(to: CGPoint(x: -s * 0.20, y: s * 0.36))
-            path.addQuadCurve(to: CGPoint(x: -s * 0.05, y: -s * 0.16), control: CGPoint(x: -s * 0.20, y: s * 0.05))
-            path.addLine(to: CGPoint(x: s * 0.05, y: -s * 0.16))
-            path.addQuadCurve(to: CGPoint(x: s * 0.20, y: s * 0.36), control: CGPoint(x: s * 0.20, y: s * 0.05))
-            path.closeSubpath()
-        }
-        return stroked(p, s)
-    }
-
-    private func rook(_ s: CGFloat) -> some View {
-        let p = Path { path in
-            path.move(to: CGPoint(x: -s * 0.26, y: -s * 0.40))
-            path.addLine(to: CGPoint(x: -s * 0.26, y: -s * 0.24))
-            path.addLine(to: CGPoint(x: -s * 0.14, y: -s * 0.24))
-            path.addLine(to: CGPoint(x: -s * 0.14, y: -s * 0.34))
-            path.addLine(to: CGPoint(x: -s * 0.05, y: -s * 0.34))
-            path.addLine(to: CGPoint(x: -s * 0.05, y: -s * 0.24))
-            path.addLine(to: CGPoint(x: s * 0.05, y: -s * 0.24))
-            path.addLine(to: CGPoint(x: s * 0.05, y: -s * 0.34))
-            path.addLine(to: CGPoint(x: s * 0.14, y: -s * 0.34))
-            path.addLine(to: CGPoint(x: s * 0.14, y: -s * 0.24))
-            path.addLine(to: CGPoint(x: s * 0.26, y: -s * 0.24))
-            path.addLine(to: CGPoint(x: s * 0.26, y: -s * 0.40))
-            path.addLine(to: CGPoint(x: s * 0.17, y: s * 0.10))
-            path.addLine(to: CGPoint(x: s * 0.24, y: s * 0.38))
-            path.addLine(to: CGPoint(x: -s * 0.24, y: s * 0.38))
-            path.addLine(to: CGPoint(x: -s * 0.17, y: s * 0.10))
-            path.closeSubpath()
-        }
-        return stroked(p, s)
-    }
-
-    private func knight(_ s: CGFloat) -> some View {
-        let p = Path { path in
-            path.move(to: CGPoint(x: s * 0.24, y: s * 0.38))
-            path.addLine(to: CGPoint(x: s * 0.24, y: s * 0.16))
-            path.addCurve(to: CGPoint(x: -s * 0.06, y: -s * 0.34),
-                         control1: CGPoint(x: s * 0.22, y: -s * 0.02),
-                         control2: CGPoint(x: s * 0.10, y: -s * 0.28))
-            path.addLine(to: CGPoint(x: -s * 0.16, y: -s * 0.26))
-            path.addLine(to: CGPoint(x: -s * 0.10, y: -s * 0.14))
-            path.addCurve(to: CGPoint(x: -s * 0.24, y: s * 0.10),
-                         control1: CGPoint(x: -s * 0.22, y: -s * 0.02),
-                         control2: CGPoint(x: -s * 0.26, y: s * 0.02))
-            path.addLine(to: CGPoint(x: -s * 0.20, y: s * 0.38))
-            path.closeSubpath()
-        }
-        return stroked(p, s)
-    }
-
-    private func bishop(_ s: CGFloat) -> some View {
-        let p = Path { path in
-            path.addEllipse(in: CGRect(x: -s * 0.06, y: -s * 0.46, width: s * 0.12, height: s * 0.12))
-            path.move(to: CGPoint(x: 0, y: -s * 0.34))
-            path.addQuadCurve(to: CGPoint(x: s * 0.17, y: s * 0.10), control: CGPoint(x: s * 0.16, y: -s * 0.22))
-            path.addLine(to: CGPoint(x: s * 0.22, y: s * 0.38))
-            path.addLine(to: CGPoint(x: -s * 0.22, y: s * 0.38))
-            path.addLine(to: CGPoint(x: -s * 0.17, y: s * 0.10))
-            path.addQuadCurve(to: CGPoint(x: 0, y: -s * 0.34), control: CGPoint(x: -s * 0.16, y: -s * 0.22))
-            path.closeSubpath()
-        }
-        return stroked(p, s)
-    }
-
-    private func queen(_ s: CGFloat) -> some View {
-        let p = Path { path in
-            path.move(to: CGPoint(x: -s * 0.28, y: -s * 0.34))
-            path.addLine(to: CGPoint(x: -s * 0.14, y: s * 0.06))
-            path.addLine(to: CGPoint(x: -s * 0.28, y: -s * 0.14))
-            path.addLine(to: CGPoint(x: -s * 0.08, y: s * 0.06))
-            path.addLine(to: CGPoint(x: 0, y: -s * 0.38))
-            path.addLine(to: CGPoint(x: s * 0.08, y: s * 0.06))
-            path.addLine(to: CGPoint(x: s * 0.28, y: -s * 0.14))
-            path.addLine(to: CGPoint(x: s * 0.14, y: s * 0.06))
-            path.addLine(to: CGPoint(x: s * 0.28, y: -s * 0.34))
-            path.addQuadCurve(to: CGPoint(x: s * 0.22, y: s * 0.16), control: CGPoint(x: s * 0.18, y: -s * 0.06))
-            path.addLine(to: CGPoint(x: s * 0.24, y: s * 0.38))
-            path.addLine(to: CGPoint(x: -s * 0.24, y: s * 0.38))
-            path.addLine(to: CGPoint(x: -s * 0.22, y: s * 0.16))
-            path.addQuadCurve(to: CGPoint(x: -s * 0.28, y: -s * 0.34), control: CGPoint(x: -s * 0.18, y: -s * 0.06))
-            path.closeSubpath()
-        }
-        return stroked(p, s)
-    }
-
-    private func king(_ s: CGFloat) -> some View {
-        let p = Path { path in
-            path.move(to: CGPoint(x: -s * 0.04, y: -s * 0.52))
-            path.addLine(to: CGPoint(x: s * 0.04, y: -s * 0.52))
-            path.addLine(to: CGPoint(x: s * 0.04, y: -s * 0.44))
-            path.addLine(to: CGPoint(x: s * 0.10, y: -s * 0.44))
-            path.addLine(to: CGPoint(x: s * 0.10, y: -s * 0.36))
-            path.addLine(to: CGPoint(x: s * 0.04, y: -s * 0.36))
-            path.addLine(to: CGPoint(x: s * 0.04, y: -s * 0.26))
-            path.addLine(to: CGPoint(x: -s * 0.04, y: -s * 0.26))
-            path.addLine(to: CGPoint(x: -s * 0.04, y: -s * 0.36))
-            path.addLine(to: CGPoint(x: -s * 0.10, y: -s * 0.36))
-            path.addLine(to: CGPoint(x: -s * 0.10, y: -s * 0.44))
-            path.addLine(to: CGPoint(x: -s * 0.04, y: -s * 0.44))
-            path.closeSubpath()
-            path.move(to: CGPoint(x: -s * 0.24, y: -s * 0.24))
-            path.addQuadCurve(to: CGPoint(x: 0, y: -s * 0.10), control: CGPoint(x: -s * 0.08, y: -s * 0.20))
-            path.addQuadCurve(to: CGPoint(x: s * 0.24, y: -s * 0.24), control: CGPoint(x: s * 0.08, y: -s * 0.20))
-            path.addLine(to: CGPoint(x: s * 0.20, y: s * 0.10))
-            path.addLine(to: CGPoint(x: s * 0.24, y: s * 0.38))
-            path.addLine(to: CGPoint(x: -s * 0.24, y: s * 0.38))
-            path.addLine(to: CGPoint(x: -s * 0.20, y: s * 0.10))
-            path.closeSubpath()
-        }
-        return stroked(p, s)
+/// 棋子底座
+struct ChessBaseShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.addRoundedRect(in: rect, cornerSize: CGSize(width: rect.height * 0.35, height: rect.height * 0.35))
+        return p
     }
 }
 

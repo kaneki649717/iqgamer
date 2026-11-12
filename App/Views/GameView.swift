@@ -27,6 +27,8 @@ struct GameView: View {
                 board
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(.horizontal, 16)
+                    .disabled(session.aiThinking)
+                    .allowsHitTesting(!session.aiThinking)
 
                 if let hint = session.hintDescription {
                     Text(hint)
