@@ -110,8 +110,8 @@ public struct Reversi: BoardGame {
     public mutating func play(_ move: ReversiMove) throws {
         if isOver { throw MoveError.gameIsOver }
         if move == .pass {
-            // 仅当确实无子可下才合法
-            if !legalMoves().isEmpty { throw MoveError.illegalMove }
+            // 仅当当前玩家确实没有实体着法才可虚着
+            if !movesFor(player: currentPlayer).isEmpty { throw MoveError.illegalMove }
             togglePlayer()
             ply += 1
             return
