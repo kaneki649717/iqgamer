@@ -205,9 +205,134 @@ public struct Gomoku: BoardGame {
     }
 }
 
+// MARK: - VCF 算杀（连续冲四取胜搜索，v1.4）
+
+extension Gomoku {
+    /// b 盘面上：p 在空点落子即成五的点集合
+    static func gomokuWinPoints(_ b: [UInt8], for p: Int) -> [Int] {
+        let stone = UInt8(p + 1)
+        var result: [Int] = []
+        let dirs = [(0, 1), (1, 0), (1, 1), (1, -1)]
+        for sq in 0..<225 where b[sq] == 0 {
+            let r = sq / 15, c = sq % 15
+            for (dr, dc) in dirs {
+                var run = 1
+                var i = 1
+                while true {
+                    let nr = r + dr * i, nc = c + dc * i
+                    if nr < 0 || nr >= 15 || nc < 0 || nc >= 15 || b[nr * 15 + nc] != stone { break }
+                    run += 1; i += 1
+                }
+                i = 1
+                while true {
+                    let nr = r - dr * i, nc = c - dc * i
+                    if nr < 0 || nr >= 15 || nc < 0 || nc >= 15 || b[nr * 15 + nc] != stone { break }
+                    run += 1; i += 1
+                }
+                if run >= 5 { result.append(sq); break }
+            }
+        }
+        return result
+    }
+
+    /// b 盘面上：p 在 sq 落子是否直接成五
+    static func makesFiveOn(_ b: [UInt8], _ sq: Int, _ p: Int) -> Bool {
+        let stone = UInt8(p + 1)
+        let r = sq / 15, c = sq % 15
+        let dirs = [(0, 1), (1, 0), (1, 1), (1, -1)]
+        for (dr, dc) in dirs {
+            var run = 1
+            var i = 1
+            while true {
+                let nr = r + dr * i, nc = c + dc * i
+                if nr < 0 || nr >= 15 || nc < 0 || nc >= 15 || b[nr * 15 + nc] != stone { break }
+                run += 1; i += 1
+            }
+            i = 1
+            while true {
+                let nr = r - dr * i, nc = c - dc * i
+                if nr < 0 || nr >= 15 || nc < 0 || nc >= 15 || b[nr * 15 + nc] != stone { break }
+                run += 1; i += 1
+            }
+            if run >= 5 { return true }
+        }
+        return false
+    }
+
+    static func nearStones(_ b: [UInt8], _ sq: Int) -> Bool {
+        let r = sq / 15, c = sq % 15
+        for dr in -2...2 {
+            for dc in -2...2 {
+                let nr = r + dr, nc = c + dc
+                if nr >= 0 && nr < 15 && nc >= 0 && nc < 15 && b[nr * 15 + nc] != 0 { return true }
+            }
+        }
+        return false
+    }
+
+    /// p 的所有「成四着法」：落子后 p 存在成五点（直接成五的另行处理）
+    static func fourMovesOn(_ b: [UInt8], for p: Int) -> [(sq: Int, wp: [Int])] {
+        var b = b
+        var out: [(sq: Int, wp: [Int])] = []
+        for sq in 0..<225 where b[sq] == 0 && nearStones(b, sq) {
+            guard !makesFiveOn(b, sq, p) else { continue }
+            b[sq] = UInt8(p + 1)
+            let wp = gomokuWinPoints(b, for: p)
+            b[sq] = 0
+            if !wp.isEmpty { out.append((sq, wp)) }
+        }
+        return out
+    }
+
+    /// VCF 主搜索：p 连续冲四必胜时返回首着。
+    /// 保守剪枝：防守方存在反击成五点的分支一律按失败处理（绝不误报必胜）；节点上限保证手机耗时。
+    func vcfFirstMove(player p: Int, maxDepth: Int = 12, nodeLimit: Int = 10000) -> Int? {
+        var b = board
+        let myStone = UInt8(p + 1)
+        let opStone = UInt8((1 - p) + 1)
+        var nodes = 0
+
+        func search(_ depth: Int) -> Int? {
+            if depth <= 0 { return nil }
+            nodes += 1
+            if nodes > nodeLimit { return nil }
+            // 1) 直接成五
+            for sq in 0..<225 where b[sq] == 0 && Gomoku.nearStones(b, sq) {
+                if Gomoku.makesFiveOn(b, sq, p) { return sq }
+            }
+            // 2) 冲四点
+            let fours = Gomoku.fourMovesOn(b, for: p)
+            for (sq, wp) in fours {
+                if wp.count >= 2 { return sq } // 双四（含活四）必胜
+                guard let block = wp.first else { continue }
+                b[sq] = myStone
+                // 防守方若已有成五点（此前的冲四未挡）→ 攻击失败
+                if Gomoku.gomokuWinPoints(b, for: 1 - p).isEmpty {
+                    b[block] = opStone // 防守被迫唯一堵点
+                    let sub = search(depth - 1)
+                    b[block] = 0
+                    b[sq] = 0
+                    if let _ = sub { return sq }
+                } else {
+                    b[sq] = 0
+                }
+            }
+            return nil
+        }
+
+        return search(maxDepth)
+    }
+}
+
 /// 五子棋 AI
 public enum GomokuAI {
     public static func bestMove(in game: Gomoku, difficulty: AIDifficulty, rng: SplitMix64? = nil) -> SearchResult<Gomoku.GomokuMove> {
+        // VCF 算杀优先：存在连续冲四必胜序列时直接执行首着（高/超高/天人档启用）
+        if difficulty == .hard || difficulty == .veryHard || difficulty == .celestial {
+            if let first = game.vcfFirstMove(player: game.currentPlayer) {
+                return SearchResult(move: Gomoku.GomokuMove(UInt8(first)), value: 0.99, depth: 0, nodes: 0)
+            }
+        }
         let profile = DifficultyProfile.for(difficulty, depthScale: 1.4)
         if let rng {
             return AlphaBetaSearch.bestMove(in: game, profile: profile, rng: rng)

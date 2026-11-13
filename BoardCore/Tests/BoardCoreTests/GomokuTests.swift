@@ -101,6 +101,42 @@ final class GomokuTests: XCTestCase {
                       "AI 必须堵下半区纵向冲四，实际 \(String(describing: r.move))")
     }
 
+    /// VCF：黑活三 → 首着应为成活四点（两端任一）
+    func testVCFFindsOpenFourWin() {
+        var g = Gomoku()
+        let seq: [(Gomoku.GomokuMove, Gomoku.GomokuMove)] = [
+            (m(7, 5), m(0, 0)),
+            (m(7, 6), m(0, 3)),
+            (m(7, 7), m(0, 6)),
+        ]
+        for (b, w) in seq { try? g.play(b); try? g.play(w) }
+        let first = g.vcfFirstMove(player: 0)
+        XCTAssertTrue(first == 7 * 15 + 4 || first == 7 * 15 + 8,
+                      "VCF 应找到成活四点，实际 \(String(describing: first))")
+    }
+
+    /// VCF：安静局面不得误报
+    func testVCFNoFalsePositiveQuiet() {
+        var g = Gomoku()
+        try? g.play(m(0, 0)); try? g.play(m(14, 14))
+        try? g.play(m(0, 4)); try? g.play(m(14, 10))
+        XCTAssertNil(g.vcfFirstMove(player: 0), "无四可冲的安静局面不应误报 VCF")
+    }
+
+    /// bestMove 集成：黑活三 → 直接下成活四点
+    func testBestMovePlaysVCFFour() {
+        var g = Gomoku()
+        let seq: [(Gomoku.GomokuMove, Gomoku.GomokuMove)] = [
+            (m(7, 5), m(0, 0)),
+            (m(7, 6), m(0, 3)),
+            (m(7, 7), m(0, 6)),
+        ]
+        for (b, w) in seq { try? g.play(b); try? g.play(w) }
+        let r = GomokuAI.bestMove(in: g, difficulty: .celestial, rng: SplitMix64(seed: 2))
+        XCTAssertTrue(r.move == m(7, 4) || r.move == m(7, 8),
+                      "bestMove 应执行 VCF 成活四着法，实际 \(String(describing: r.move))")
+    }
+
     func testZobristReplay() {
         var g1 = Gomoku()
         var rng = SplitMix64(seed: 88)
